@@ -11,7 +11,7 @@ A Devvit app that automatically announces new GitHub releases to your subreddit.
 
 ## Setup
 
-1. Install the app on your subreddit
+1. Install the app on your subreddit via [this page](https://developers.reddit.com/apps/release-announce).
 2. Navigate to the app settings page:
    `https://developers.reddit.com/r/{your-subreddit}/apps/release-announce`
 3. Enter your GitHub repositories in `owner/repo` format (e.g. `drworman/release-announce`)
