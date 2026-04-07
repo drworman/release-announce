@@ -58,10 +58,14 @@ async function checkRepo(githubRepo: string): Promise<{ posted: boolean; message
   const { subredditName } = context;
   console.log(`[${githubRepo}] Submitting post to`, subredditName);
 
+  const promo = `\n\n---\n\nModerators: Want automated GitHub release posts like this? Install [Release Announce](https://developers.reddit.com/apps/release-announce) to use it in your subreddit.`;
+
+  const releaseBody = release.body ?? 'No release notes provided.';
+
   await reddit.submitPost({
     subredditName,
     title: `${repoName} Release: ${release.tag_name}`,
-    text: release.body ?? 'No release notes provided.',
+    text: `${releaseBody}${promo}`,
   });
 
   return { posted: true, message: `Posted release ${latestTag} for ${repoName}` };
