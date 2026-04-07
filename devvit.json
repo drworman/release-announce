@@ -1,0 +1,29 @@
+"settings": {
+  "subreddit": {
+    "githubRepo1": {
+      "type": "string",
+      "label": "GitHub Repo 1 (e.g. owner/repo)",
+      "defaultValue": ""
+    },
+    "githubRepo2": {
+      "type": "string",
+      "label": "GitHub Repo 2 (e.g. owner/repo)",
+      "defaultValue": ""
+    },
+    "githubRepo3": {
+      "type": "string",
+      "label": "GitHub Repo 3 (e.g. owner/repo)",
+      "defaultValue": ""
+    },
+    "githubRepo4": {
+      "type": "string",
+      "label": "GitHub Repo 4 (e.g. owner/repo)",
+      "defaultValue": ""
+    },
+    "githubRepo5": {
+      "type": "string",
+      "label": "GitHub Repo 5 (e.g. owner/repo)",
+      "defaultValue": ""
+    }
+  }
+}
