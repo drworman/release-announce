@@ -5,25 +5,22 @@ name: Release
 #
 # What this workflow produces per release:
 #
-#   EDMD-{version}.tar.gz          Source archive (ksw and build artefacts excluded)
-#   EDMD-{version}.tar.gz.sig      Detached SSH signature
-#   EDMD-{version}.sha256          SHA-256 checksum
+#   {repo}-{version}.tar.gz          Source archive
+#   {repo}-{version}.tar.gz.sig      Detached SSH signature
+#   {repo}-{version}.sha256          SHA-256 checksum
 #
-# Future artifact slots (add build steps in section 3, signing is automatic):
-#   EDMD-{version}.AppImage        Electron GUI — Linux AppImage
-#   EDMD-{version}.amd64.deb       Electron GUI — Debian package
-#   EDMD-{version}-setup.exe       Electron GUI — Windows installer
+# Future artifact slots — add build steps in section 3; signing is automatic.
 #
 # Required repository secrets:
-#   SIGNING_KEY       Private SSH key (ed25519), PEM/OpenSSH format, no passphrase
-#   SIGNING_IDENTITY  Email address or identifier matching the public key
+#   SIGNING_KEY       Private SSH key (ed25519), no passphrase
+#   SIGNING_IDENTITY  Email/identifier matching the public key in signing_key.pub
 
 on:
   release:
     types: [published]
 
 permissions:
-  contents: write   # needed to upload assets to the release
+  contents: write
 
 jobs:
   release:
@@ -31,8 +28,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VERSION: ${{ github.event.release.tag_name }}
-      SIGNING_NS: edmd.release   # SSH signing namespace — must match verify_release.sh
+      VERSION:    ${{ github.event.release.tag_name }}
+      PROJ:       ${{ github.event.repository.name }}
+      SIGNING_NS: ${{ github.event.repository.name }}.release
 
     steps:
 
@@ -43,108 +41,69 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
           fetch-depth: 1
 
-      # ── 2. Verify the tag is annotated and the release version matches ─────────
-      - name: Verify version consistency
-        run: |
-          TAG="${{ env.VERSION }}"
-          STATE_VER=$(python3 -c "
-          import re, pathlib
-          t = pathlib.Path('core/state.py').read_text()
-          m = re.search(r'VERSION\s*=\s*[\"\']([\w.-]+)[\"\']', t)
-          print(m.group(1) if m else '')
-          ")
-          echo "Tag:          $TAG"
-          echo "core/state.py: $STATE_VER"
-          if [ "$TAG" != "$STATE_VER" ]; then
-            echo "ERROR: release tag ($TAG) does not match VERSION in core/state.py ($STATE_VER)"
-            echo "Update core/state.py before publishing this release."
-            exit 1
-          fi
-          echo "Version match: OK"
-
-      # ── 3. Build artifacts ────────────────────────────────────────────────────
-      # Currently: source tarball only.
-      # Future: add Electron AppImage, .deb, .exe build steps here.
-      # Each step should place its output file(s) in dist/ before section 4 runs.
-
+      # ── 2. Create dist directory ──────────────────────────────────────────────
       - name: Create dist directory
         run: mkdir -p dist
 
+      # ── 3. Build artifacts ────────────────────────────────────────────────────
+      # Add project-specific build steps here.
+      # Each step should place its output file(s) in dist/.
+      # The signing and upload steps handle everything in dist/ automatically.
+
       - name: Build source tarball
         run: |
-          ARCHIVE="dist/EDMD-${{ env.VERSION }}.tar.gz"
-          # Exclude private components, build artefacts, and VCS metadata
+          ARCHIVE="dist/${{ env.PROJ }}-${{ env.VERSION }}.tar.gz"
           tar czf "$ARCHIVE" \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
             --exclude='*.pyo' \
-            --exclude='components/ksw' \
-            --exclude='ksw-admin' \
-            --exclude='allowlist.ksw' \
             --exclude='dist' \
-            --transform "s|^\.|EDMD-${{ env.VERSION }}|" \
+            --transform "s|^\.|${{ env.PROJ }}-${{ env.VERSION }}|" \
             .
           echo "Archive: $(du -sh $ARCHIVE | cut -f1)"
-          echo "Entries: $(tar tzf $ARCHIVE | wc -l)"
 
       # ── 4. Generate checksums ─────────────────────────────────────────────────
       - name: Generate SHA-256 checksums
         working-directory: dist
         run: |
-          sha256sum EDMD-${{ env.VERSION }}.tar.gz > EDMD-${{ env.VERSION }}.sha256
-          # Future: append additional artifacts here as they are added
-          # sha256sum EDMD-${{ env.VERSION }}.AppImage >> EDMD-${{ env.VERSION }}.sha256
-          cat EDMD-${{ env.VERSION }}.sha256
+          sha256sum "${{ env.PROJ }}-${{ env.VERSION }}.tar.gz" \
+            > "${{ env.PROJ }}-${{ env.VERSION }}.sha256"
+          cat "${{ env.PROJ }}-${{ env.VERSION }}.sha256"
 
-      # ── 5. Sign all release artifacts with SSH ────────────────────────────────
-      # Signs every file in dist/ that is NOT already a .sig or .sha256 file.
-      # Adding new artifact types to step 3 automatically gets them signed here.
+      # ── 5. Sign all release artifacts ─────────────────────────────────────────
       - name: Sign artifacts
         env:
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY:      ${{ secrets.SIGNING_KEY }}
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
         run: |
-          # Write the key to a temp file with correct permissions
           KEY_FILE=$(mktemp)
           chmod 600 "$KEY_FILE"
           echo "$SIGNING_KEY" > "$KEY_FILE"
 
-          # Sign every artifact (tar.gz, AppImage, deb, exe — whatever is in dist/)
-          for f in dist/EDMD-${{ env.VERSION }}.*; do
+          for f in dist/${{ env.PROJ }}-${{ env.VERSION }}.*; do
             case "$f" in
-              *.sig|*.sha256) continue ;;  # skip signatures and checksums
+              *.sig|*.sha256) continue ;;
             esac
             echo "Signing: $f"
-            ssh-keygen -Y sign \
-              -f "$KEY_FILE" \
-              -n "${{ env.SIGNING_NS }}" \
-              "$f"
-            echo "  -> ${f}.sig"
+            ssh-keygen -Y sign -f "$KEY_FILE" -n "${{ env.SIGNING_NS }}" "$f"
           done
 
-          # Sign the checksum file too so its integrity is independently verifiable
-          echo "Signing: dist/EDMD-${{ env.VERSION }}.sha256"
+          echo "Signing: dist/${{ env.PROJ }}-${{ env.VERSION }}.sha256"
           ssh-keygen -Y sign \
             -f "$KEY_FILE" \
             -n "${{ env.SIGNING_NS }}" \
-            "dist/EDMD-${{ env.VERSION }}.sha256"
+            "dist/${{ env.PROJ }}-${{ env.VERSION }}.sha256"
 
-          # Scrub the key immediately
           rm -f "$KEY_FILE"
-
-          echo ""
-          echo "Signed artifacts:"
           ls -lh dist/
 
-      # ── 6. Verify signatures before uploading ────────────────────────────────
-      # Belt-and-suspenders: verify everything locally before it goes public.
+      # ── 6. Verify signatures before upload ───────────────────────────────────
       - name: Verify signatures
         env:
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
         run: |
-          # Build an allowed_signers file from the in-repo public key
           PUB=$(cat signing_key.pub)
           ALLOWED=$(mktemp)
           echo "${{ env.SIGNING_IDENTITY }} namespaces=\"${{ env.SIGNING_NS }}\" $PUB" > "$ALLOWED"
@@ -164,21 +123,16 @@ jobs:
               FAIL=1
             fi
           done
-
           rm -f "$ALLOWED"
 
-          if [ "$FAIL" -ne 0 ]; then
-            echo "ERROR: one or more signature verifications failed"
-            exit 1
-          fi
+          [ "$FAIL" -eq 0 ] || { echo "Signature verification failed"; exit 1; }
           echo "All signatures verified."
 
-      # ── 7. Upload artifacts to the GitHub Release ─────────────────────────────
+      # ── 7. Upload to GitHub Release ───────────────────────────────────────────
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Upload every file in dist/ to the release
           for f in dist/*; do
             echo "Uploading: $f"
             gh release upload "${{ env.VERSION }}" "$f" --clobber
