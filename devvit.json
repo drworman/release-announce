@@ -1,69 +1,94 @@
 {
-   "$schema":"https://developers.reddit.com/schema/config-file.v1.json",
-   "name":"release-announce",
-   "server":{
-      "entry":"index.cjs"
+   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+   "name": "release-announce",
+   "server": {
+      "entry": "index.cjs"
    },
-   "permissions":{
-      "reddit":true,
-      "redis":true,
-      "http":{
-         "enable":true,
-         "domains":[
+   "permissions": {
+      "reddit": true,
+      "redis": true,
+      "http": {
+         "enable": true,
+         "domains": [
             "api.github.com"
          ]
       }
    },
-   "settings":{
-      "subreddit":{
-         "githubRepo1":{
-            "type":"string",
-            "label":"GitHub Repo 1 (e.g. owner/repo)",
-            "defaultValue":""
+   "settings": {
+      "subreddit": {
+         "githubRepo1": {
+            "type": "string",
+            "label": "GitHub Repo 1 (e.g. owner/repo)",
+            "defaultValue": ""
          },
-         "githubRepo2":{
-            "type":"string",
-            "label":"GitHub Repo 2 (e.g. owner/repo)",
-            "defaultValue":""
+         "overrideText1": {
+            "type": "paragraph",
+            "label": "Repo 1 – Custom announcement text (leave blank to use GitHub release notes)",
+            "defaultValue": ""
          },
-         "githubRepo3":{
-            "type":"string",
-            "label":"GitHub Repo 3 (e.g. owner/repo)",
-            "defaultValue":""
+         "githubRepo2": {
+            "type": "string",
+            "label": "GitHub Repo 2 (e.g. owner/repo)",
+            "defaultValue": ""
          },
-         "githubRepo4":{
-            "type":"string",
-            "label":"GitHub Repo 4 (e.g. owner/repo)",
-            "defaultValue":""
+         "overrideText2": {
+            "type": "paragraph",
+            "label": "Repo 2 – Custom announcement text (leave blank to use GitHub release notes)",
+            "defaultValue": ""
          },
-         "githubRepo5":{
-            "type":"string",
-            "label":"GitHub Repo 5 (e.g. owner/repo)",
-            "defaultValue":""
+         "githubRepo3": {
+            "type": "string",
+            "label": "GitHub Repo 3 (e.g. owner/repo)",
+            "defaultValue": ""
+         },
+         "overrideText3": {
+            "type": "paragraph",
+            "label": "Repo 3 – Custom announcement text (leave blank to use GitHub release notes)",
+            "defaultValue": ""
+         },
+         "githubRepo4": {
+            "type": "string",
+            "label": "GitHub Repo 4 (e.g. owner/repo)",
+            "defaultValue": ""
+         },
+         "overrideText4": {
+            "type": "paragraph",
+            "label": "Repo 4 – Custom announcement text (leave blank to use GitHub release notes)",
+            "defaultValue": ""
+         },
+         "githubRepo5": {
+            "type": "string",
+            "label": "GitHub Repo 5 (e.g. owner/repo)",
+            "defaultValue": ""
+         },
+         "overrideText5": {
+            "type": "paragraph",
+            "label": "Repo 5 – Custom announcement text (leave blank to use GitHub release notes)",
+            "defaultValue": ""
          }
       }
    },
-   "scheduler":{
-      "tasks":{
-         "check-releases":{
-            "endpoint":"/internal/scheduler/check-releases",
-            "cron":"0 * * * *"
+   "scheduler": {
+      "tasks": {
+         "check-releases": {
+            "endpoint": "/internal/scheduler/check-releases",
+            "cron": "0 * * * *"
          }
       }
    },
-   "menu":{
-      "items":[
+   "menu": {
+      "items": [
          {
-            "label":"Check for New Release",
-            "description":"Manually check GitHub for a new release and post if found",
-            "forUserType":"moderator",
-            "location":"subreddit",
-            "endpoint":"/internal/menu/check-releases"
+            "label": "Check for New Release",
+            "description": "Manually check GitHub for a new release and post if found",
+            "forUserType": "moderator",
+            "location": "subreddit",
+            "endpoint": "/internal/menu/check-releases"
          }
       ]
    },
-   "scripts":{
-      "dev":"vite build --watch",
-      "build":"vite build"
+   "scripts": {
+      "dev": "vite build --watch",
+      "build": "vite build"
    }
 }
