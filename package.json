@@ -16,13 +16,13 @@
     "node": ">=22.6.0"
   },
   "dependencies": {
-    "@devvit/start": "0.12.20",
-    "@devvit/web": "0.12.20",
+    "@devvit/start": "0.12.21",
+    "@devvit/web": "0.12.21",
     "hono": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "22.12.0",
-    "devvit": "0.12.20",
+    "devvit": "0.12.21",
     "typescript": "5.8.3"
   }
 }
